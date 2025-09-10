@@ -3,7 +3,7 @@ export default async function handler(req, res) {
 
   const { message, language } = req.body;
   if (!message) return res.status(400).json({ error: "Message required" });
-  if (!process.env.GEMINI_API_KEY) return res.status(500).json({ error: "Missing GEMINI_API_KEY" });
+  if (!process.env.GEMINI_API_KEY) return res.status(500).json({ error: "GEMINI_API_KEY not set" });
 
   try {
     const promptText = language === "ta"
@@ -30,13 +30,11 @@ export default async function handler(req, res) {
 
     const rawText = await response.text();
 
-    // Check if response is OK
     if (!response.ok) {
-      console.error("Gemini returned non-JSON:", rawText);
+      console.error("Gemini returned error:", rawText);
       return res.status(500).json({ error: "Gemini returned error", rawResponse: rawText });
     }
 
-    // Try parsing JSON safely
     let data;
     try { data = JSON.parse(rawText); } 
     catch (err) {
