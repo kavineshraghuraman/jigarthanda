@@ -4,7 +4,6 @@ let useTamil = false;
 const messagesEl = document.getElementById('messages');
 const userInput = document.getElementById('userInput');
 const sendBtn = document.getElementById('sendBtn');
-const imageInput = document.getElementById('imageInput');
 const langToggle = document.getElementById('langToggle');
 
 langToggle.onclick = () => {
@@ -22,35 +21,16 @@ function addMessage(text, sender) {
 
 async function sendMessage() {
   const text = userInput.value.trim();
-  const file = imageInput.files[0];
+  if (!text) return;
 
-  if (!text && !file) return;
-
-  if (text) addMessage(text, 'user');
-  if (file) addMessage(`📷 Image: ${file.name}`, 'user');
-
+  addMessage(text, 'user');
   userInput.value = '';
-  imageInput.value = '';
-
-  let base64Image = null;
-  if (file) {
-    base64Image = await new Promise((resolve, reject) => {
-      const reader = new FileReader();
-      reader.onload = () => resolve(reader.result.split(',')[1]);
-      reader.onerror = reject;
-      reader.readAsDataURL(file);
-    });
-  }
 
   try {
     const res = await fetch(API_ENDPOINT, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ 
-        message: text, 
-        language: useTamil ? 'ta' : 'en',
-        image: base64Image
-      })
+      body: JSON.stringify({ message: text, language: useTamil ? 'ta' : 'en' })
     });
     const data = await res.json();
     addMessage(data.reply, 'ai');
