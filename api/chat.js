@@ -1,6 +1,4 @@
 export default async function handler(req, res) {
-  console.log("Incoming request:", req.body);
-
   if (req.method !== "POST") {
     return res.status(405).json({ error: "Method not allowed" });
   }
@@ -11,14 +9,18 @@ export default async function handler(req, res) {
     return res.status(400).json({ error: "Message is required" });
   }
 
+  if (!process.env.GEMINI_API_KEY) {
+    return res.status(500).json({ error: "Missing GEMINI_API_KEY in environment" });
+  }
+
   try {
     const response = await fetch(
-      "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent",
+      "https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5:generateContent",
       {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
-          "X-goog-api-key": process.env.GEMINI_API_KEY, // ✅ Correct way
+          "X-goog-api-key": process.env.GEMINI_API_KEY,
         },
         body: JSON.stringify({
           contents: [
@@ -37,8 +39,18 @@ export default async function handler(req, res) {
       }
     );
 
-    const data = await response.json();
-    console.log("Gemini raw response:", data);
+    const text = await response.text(); // read raw response
+    let data;
+
+    try {
+      data = JSON.parse(text); // parse JSON
+    } catch (err) {
+      console.error("Failed to parse JSON from Gemini:", text);
+      return res.status(500).json({
+        error: "Gemini API did not return valid JSON",
+        rawResponse: text,
+      });
+    }
 
     if (data.error) {
       return res.status(500).json({ error: data.error.message });
@@ -52,4 +64,7 @@ export default async function handler(req, res) {
 
     res.status(200).json({ reply });
   } catch (err) {
-    console.error("Se
+    console.error("Server error:", err);
+    res.status(500).json({ error: err.message });
+  }
+}
