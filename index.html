@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Farmer AI Chatbot</title>
+  <title>Jigarthanda AI Chatbot</title>
   <style>
     body {
       margin: 0;
@@ -51,28 +51,28 @@
       padding: 10px;
       border-radius: 10px;
       max-width: 70%;
+      word-wrap: break-word;
     }
-    .user {
-      background: #c8e6c9;
-      margin-left: auto;
-    }
-    .ai {
-      background: #eeeeee;
-      margin-right: auto;
-    }
+    .user { background: #c8e6c9; margin-left: auto; }
+    .ai { background: #eeeeee; margin-right: auto; }
     .input-area {
       display: flex;
       padding: 10px;
       background: #f1f1f1;
+      gap: 10px;
     }
-    .input-area input {
+    .input-area input[type="text"] {
       flex: 1;
       padding: 10px;
       border: 1px solid #ccc;
       border-radius: 6px;
     }
+    .input-area input[type="file"] {
+      border: 1px solid #ccc;
+      border-radius: 6px;
+      padding: 5px;
+    }
     .input-area button {
-      margin-left: 10px;
       padding: 10px 15px;
       border: none;
       border-radius: 6px;
@@ -84,16 +84,19 @@
 </head>
 <body>
   <div class="sidebar">
-    <h2>🌾 AgriBot</h2>
+    <h2>🌟 Jigarthanda AI</h2>
     <button id="langToggle" class="toggle-btn">Tamil: OFF</button>
   </div>
+
   <div class="chat-container">
     <div id="messages" class="messages"></div>
     <div class="input-area">
       <input id="userInput" type="text" placeholder="Type your question..." />
+      <input id="imageInput" type="file" accept="image/*" />
       <button id="sendBtn">Send</button>
     </div>
   </div>
+
   <script src="chat.js"></script>
 </body>
 </html>
