@@ -1,20 +1,37 @@
 export default async function handler(req, res) {
-  if (req.method !== "POST") return res.status(405).json({ error: "Method not allowed" });
+  if (req.method !== "POST") {
+    return res.status(405).json({ error: "Method not allowed" });
+  }
 
   const { message, language, image } = req.body;
-  if (!message && !image) return res.status(400).json({ error: "Message or image is required" });
-  if (!process.env.GEMINI_API_KEY) return res.status(500).json({ error: "Missing GEMINI_API_KEY in environment" });
+
+  if (!message && !image) {
+    return res.status(400).json({ error: "Message or image is required" });
+  }
+
+  if (!process.env.GEMINI_API_KEY) {
+    return res.status(500).json({ error: "Missing GEMINI_API_KEY in environment" });
+  }
 
   try {
-    // Prompt with concise, human-like instructions
+    // Build concise human-like prompt
     const promptText = language === 'ta'
       ? `பதிலைக் தமிழ் மொழியில் **சுருக்கமாக** மற்றும் **மனிதனைப் போல்** அளிக்கவும்: ${message || ""}`
       : `Answer the question in **short, concise, human-like sentences**: ${message || ""}`;
 
-    const contents = [{ parts: [{ text: promptText }] }];
+    const requestBody = {
+      contents: [
+        {
+          parts: [{ text: promptText }]
+        }
+      ],
+      temperature: 0.7,
+      maxOutputTokens: 120
+    };
 
+    // Add image if present
     if (image) {
-      contents[0].image = { imageBytes: image };
+      requestBody.contents[0].image = { imageBytes: image };
     }
 
     const response = await fetch(
@@ -25,22 +42,26 @@ export default async function handler(req, res) {
           "Content-Type": "application/json",
           "X-goog-api-key": process.env.GEMINI_API_KEY
         },
-        body: JSON.stringify({
-          contents,
-          temperature: 0.7,
-          maxOutputTokens: 120
-        })
+        body: JSON.stringify(requestBody)
       }
     );
 
     const text = await response.text();
+
     let data;
-    try { data = JSON.parse(text); }
-    catch (err) {
-      return res.status(500).json({ error: "Gemini API did not return valid JSON", rawResponse: text });
+    try {
+      data = JSON.parse(text);
+    } catch (err) {
+      console.error("Failed to parse JSON from Gemini:", text);
+      return res.status(500).json({
+        error: "Gemini API did not return valid JSON",
+        rawResponse: text
+      });
     }
 
-    if (data.error) return res.status(500).json({ error: data.error.message });
+    if (data.error) {
+      return res.status(500).json({ error: data.error.message });
+    }
 
     const reply = data?.candidates?.[0]?.content?.parts?.[0]?.text ||
                   (language === "ta" ? "மன்னிக்கவும், பதிலை பெற முடியவில்லை." : "Sorry, I couldn’t generate a reply.");
