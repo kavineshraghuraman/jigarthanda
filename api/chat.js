@@ -1,4 +1,6 @@
 export default async function handler(req, res) {
+  console.log("Incoming request:", req.body);
+
   if (req.method !== "POST") {
     return res.status(405).json({ error: "Method not allowed" });
   }
@@ -11,11 +13,13 @@ export default async function handler(req, res) {
 
   try {
     const response = await fetch(
-      "https://generativelanguage.googleapis.com/v1beta/models/gemini-pro:generateContent?key=" +
-        process.env.GEMINI_API_KEY,
+      "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent",
       {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: {
+          "Content-Type": "application/json",
+          "X-goog-api-key": process.env.GEMINI_API_KEY, // ✅ Correct way
+        },
         body: JSON.stringify({
           contents: [
             {
@@ -23,7 +27,7 @@ export default async function handler(req, res) {
                 {
                   text:
                     language === "ta"
-                      ? `Reply only in Tamil. Question: ${message}`
+                      ? `பதிலைக் தமிழ் மொழியில் மட்டும் வழங்கவும். கேள்வி: ${message}`
                       : message,
                 },
               ],
@@ -34,14 +38,18 @@ export default async function handler(req, res) {
     );
 
     const data = await response.json();
+    console.log("Gemini raw response:", data);
+
+    if (data.error) {
+      return res.status(500).json({ error: data.error.message });
+    }
+
     const reply =
       data?.candidates?.[0]?.content?.parts?.[0]?.text ||
       (language === "ta"
-        ? "மன்னிக்கவும், நான் பதிலை உருவாக்க முடியவில்லை."
+        ? "மன்னிக்கவும், பதிலை பெற முடியவில்லை."
         : "Sorry, I couldn’t generate a reply.");
 
     res.status(200).json({ reply });
   } catch (err) {
-    res.status(500).json({ error: err.message });
-  }
-}
+    console.error("Se
