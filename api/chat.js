@@ -15,7 +15,7 @@ export default async function handler(req, res) {
 
   try {
     const response = await fetch(
-      "https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5:generateContent",
+      "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent",
       {
         method: "POST",
         headers: {
@@ -39,11 +39,12 @@ export default async function handler(req, res) {
       }
     );
 
-    const text = await response.text(); // read raw response
+    // read raw text first to avoid JSON parse errors
+    const text = await response.text();
     let data;
 
     try {
-      data = JSON.parse(text); // parse JSON
+      data = JSON.parse(text); // try parsing JSON
     } catch (err) {
       console.error("Failed to parse JSON from Gemini:", text);
       return res.status(500).json({
@@ -52,10 +53,12 @@ export default async function handler(req, res) {
       });
     }
 
+    // check if Gemini returned an error
     if (data.error) {
       return res.status(500).json({ error: data.error.message });
     }
 
+    // extract reply
     const reply =
       data?.candidates?.[0]?.content?.parts?.[0]?.text ||
       (language === "ta"
